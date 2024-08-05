@@ -90,7 +90,9 @@ class ShoppingApp:
         
         self.cancel_button = tk.Button(self.items_window, text="انصراف", bg="red", fg="white", command=self.items_window.destroy)
         self.cancel_button.pack(side=tk.RIGHT, padx=10, pady=10)
-    
+
+
+    #Calculate the total purchase
     def confirm_purchase(self):
         self.selected_items = [item for item, var in self.item_vars if var.get() == 1]
         
