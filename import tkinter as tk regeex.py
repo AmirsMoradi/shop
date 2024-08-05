@@ -1,0 +1,161 @@
+import tkinter as tk
+from tkinter import messagebox
+import re
+
+class Item:
+    def __init__(self, name, price):
+        self.name = name
+        self.price = price
+
+class ElectricItem(Item):
+    pass
+
+class NonElectricItem(Item):
+    pass
+
+# List of electrical and non-electrical goods
+electric_items = [
+    ElectricItem("یخچال", 10000000),
+    ElectricItem("تلویزیون", 7000000),
+    ElectricItem("مایکروویو", 3000000),
+    ElectricItem("جاروبرقی", 1500000),
+    ElectricItem("ماشین لباسشویی", 8000000),
+    ElectricItem("ماشین ظرفشویی", 9000000),
+    ElectricItem("اجاق گاز", 4000000),
+    ElectricItem("کولر گازی", 12000000),
+    ElectricItem("آبمیوه گیری", 2000000),
+    ElectricItem("مخلوط کن", 1800000)
+]
+
+non_electric_items = [
+    NonElectricItem("میز", 1500000),
+    NonElectricItem("صندلی", 500000),
+    NonElectricItem("کتابخانه", 2000000),
+    NonElectricItem("کمد", 2500000),
+    NonElectricItem("تخت خواب", 3000000),
+    NonElectricItem("مبل", 3500000),
+    NonElectricItem("فرش", 4000000),
+    NonElectricItem("پرده", 700000),
+    NonElectricItem("ساعت دیواری", 600000),
+    NonElectricItem("آینه", 800000)
+]
+
+# Interface tkinter
+class ShoppingApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("فروشگاه کالاها")
+        self.root.geometry("700x500")          
+        self.selected_items = []
+        self.total_price = 0
+        
+        self.select_button = tk.Button(root, text="لطفا اقلام خود را انتخاب کنید", command=self.show_items)
+        self.select_button.pack(pady=10)
+        
+    def show_items(self):
+        self.items_window = tk.Toplevel(self.root)
+        self.items_window.title("انتخاب اقلام")
+        self.items_window.geometry("700x600")  
+        
+        self.selected_items = []
+        
+
+        self.items_frame = tk.Frame(self.items_window)
+        self.items_frame.pack(pady=10)
+        
+        #  Creating two frames for electrical and non-electric devices
+        self.electric_frame = tk.Frame(self.items_frame)
+        self.electric_frame.pack(side=tk.RIGHT, padx=20)
+        self.non_electric_frame = tk.Frame(self.items_frame)
+        self.non_electric_frame.pack(side=tk.LEFT, padx=20)
+        
+        # Add electrical devices to the corresponding frame with radio buttons
+        self.item_vars = []
+        for item in electric_items:
+            var = tk.IntVar()
+            self.item_vars.append((item, var))
+            radio_button = tk.Radiobutton(self.electric_frame, text=f"{item.name} - {item.price} تومان", variable=var, value=1)
+            radio_button.pack(anchor='w')
+        
+        #  Add non-electric devices to the corresponding frame with radio buttons
+        for item in non_electric_items:
+            var = tk.IntVar()
+            self.item_vars.append((item, var))
+            radio_button = tk.Radiobutton(self.non_electric_frame, text=f"{item.name} - {item.price} تومان", variable=var, value=1)
+            radio_button.pack(anchor='w')
+        
+        # Confirm and cancel button
+        self.confirm_button = tk.Button(self.items_window, text="تایید خرید", bg="green", fg="white", command=self.confirm_purchase)
+        self.confirm_button.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.cancel_button = tk.Button(self.items_window, text="انصراف", bg="red", fg="white", command=self.items_window.destroy)
+        self.cancel_button.pack(side=tk.RIGHT, padx=10, pady=10)
+    
+    def confirm_purchase(self):
+        self.selected_items = [item for item, var in self.item_vars if var.get() == 1]
+        
+        self.total_price = sum(item.price for item in self.selected_items)
+        
+        self.items_window.destroy()
+        
+        messagebox.showinfo("مجموع خرید", f"مجموع خرید شما: {self.total_price} تومان")
+        
+        self.show_payment_window()
+    
+    def show_payment_window(self):
+        self.payment_window = tk.Toplevel(self.root)
+        self.payment_window.title("پرداخت")
+        self.payment_window.geometry("400x300") 
+        
+        # card number
+        tk.Label(self.payment_window, text="شماره کارت را وارد کنید:").pack(pady=5)
+        self.card_number_entry = tk.Entry(self.payment_window)
+        self.card_number_entry.pack(pady=5)
+        
+        #  CVV2
+        tk.Label(self.payment_window, text="CVV2:").pack(pady=5)
+        self.cvv2_entry = tk.Entry(self.payment_window)
+        self.cvv2_entry.pack(pady=5)
+        
+        # second password
+        tk.Label(self.payment_window, text="رمز دوم:").pack(pady=5)
+        self.password_entry = tk.Entry(self.payment_window, show="*")
+        self.password_entry.pack(pady=5)
+        
+        # Payment button
+        self.pay_button = tk.Button(self.payment_window, text="پرداخت", command=self.process_payment)
+        self.pay_button.pack(pady=10)
+    
+    def process_payment(self):
+        card_number = self.card_number_entry.get()
+        cvv2 = self.cvv2_entry.get()
+        password = self.password_entry.get()
+        
+        if not self.validate_card_number(card_number):
+            messagebox.showerror("خطا", "شماره کارت نامعتبر است. شماره کارت باید 16 رقم باشد.")
+            return
+        
+        if not self.validate_cvv2(cvv2):
+            messagebox.showerror("خطا", "CVV2 نامعتبر است. CVV2 باید 3 رقم باشد.")
+            return
+        
+        if not self.validate_password(password):
+            messagebox.showerror("خطا", "رمز دوم نامعتبر است. رمز دوم باید 6 رقم باشد.")
+            return
+        
+        messagebox.showinfo("پرداخت", "پرداخت انجام شد")
+        self.payment_window.destroy()
+
+    def validate_card_number(self, card_number):
+        return re.fullmatch(r"\d{16}", card_number) is not None
+    
+    def validate_cvv2(self, cvv2):
+        return re.fullmatch(r"\d{3}", cvv2) is not None
+    
+    def validate_password(self, password):
+        return re.fullmatch(r"\d{6}", password) is not None
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ShoppingApp(root)
+    root.mainloop()
